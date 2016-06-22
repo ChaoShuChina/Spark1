@@ -1,0 +1,61 @@
+An Efficient Reverse Geocoding Method based on Global Subdivision Model
+
+
+Mengyu Ma, Zhinong Zhong*, Ning Guo, Ning Jing, Wei Xiong
+College of Electronic and Engineering,
+National University of Defense Technology, Changsha, China 
+*Corresponding author, e-mail: mamengyunudt@163.com
+
+
+
+Keywords: Global Subdivision Model (GSM); Geohash; Reverse Geocoding; Location Based Service;
+Objective: As a critical component of Location-Based Service(LBS), reverse geocoding is the process of converting a coordinate obtained by GPS to a readable street address. This paper aims to present an efficient reverse geocoding method based on Global Subdivision Model(GSM).
+Background: In recent years, reverse geocoding has become very popular. There are lots of public reverse geocoding services [1-3], and most of these services are available free of charge. These services provide friendly application programming interfaces(API) which are easy for programmers to use. With widespread use of location-aware mobile electronic devices and extensive application of LBS, the capability of reverse geocoding is in high demand. Meanwhile, with the constantly expanding of spatial data size [4], the computing quantity of reverse geocoding continues to increase. So it does make sense to find out a new reverse geocoding method which is more efficient.
+Data:
+TABLE I. Experiment Datasets
+Dataset Name	Data Type	Object Number	Source
+Beijing_POI	Point object	385792	Datatang[5] 
+Beijing_ROAD	Line object	226237	Datatang[6] 
+China_DISTRICTa	Region object	3133	Baidu Maps API[7] 
+China_SUBDIVISION	--	--	National Bureau of Statistics of China[8]
+a. China_DISTRICT is gotten through Baidu Maps API and shared in Google Drive [9].
+Methodology: Based on GSM, this paper presents an efficient reverse geocoding method named Geohash-based reverse geocoding(GBRG). 
+In GBRG, the data organization structure is based on Geohash. Spatial objects can be divided into three categories: point objects, line objects and region objects. And the spatial objects are encoded to Geohash codes which can be used to identify the location of spatial objects. A key point in this step is encoding line objects and region objects with an adaptive Geohash method. The basic ideas of the adaptive Geohash method are as follows: 1) Determine the length of the Geohash code according to the Minimum Bounding Rectangle (MBR) of the target object; 2) Encode the four corner points of the MBR into fixed-length Geohash codes with the length determined in the first step; 3) Select the distinguished types from the Geohash codes of the four corner points as the Geohash codes of the target object. After encoding the spatial objects, each point object is represented with one Geohash code and each line object or region object is represented with one to four Geohash codes. In the end, the spatial objects with Geohash codes are stored in PostgreSQL which has a good support for spatial data (PostGIS [10]).
+Next, we introduce the concrete process of GBRG. The essence of reverse geocoding is to find the nearby spatial objects of a point location and determine the spatial relations with these objects. In GBRG, spatial objects near the point location can be efficiently retrieved by comparing the Geohash codes. Actually, the process is to find the spatial objects intersected with the grids near the point location. In order to make sure that the nearest spatial objects are in the scope of the results retrieved, we use the eight neighborhood for retrieval. PostGIS provides a lot of functions for geometric calculation and we use these functions to determine the spatial relations between the point location and the spatial objects. The flow of GBRG is described as follows (see Figure 1):
+
+
+Figure 1. The flow of Geohash-based reverse geocoding
+Result and Discussion: In order to analysis the efficiency and accuracy of GBRG, we compare GBRG with a method which organizes spatial data by R-tree indexes.
+Efficiency Test: We select six point locations as input to test the efficiency of GBRG. The density of the spatial objects is different near the six point locations. The results are shown in Figure 5.
+
+Figure 2. The conversion time of the six point locations
+The results show that GBRG is more efficient. And the conversion time in GBRG is reduced to about two-thirds of the conversion time in the method based on R-tree index. It is because that in GBRG the multidimensional spatial data is mapped to one dimension and this makes the retrieval simpler.
+Accuracy Test: We randomly select 1000 point locations in Beijing as input to test the accuracy of GBRG. The results are shown in TABLE II.
+TABLE II. The results of accuracy test with 1000 point locations as input
+Description	Number	Percentage
+Completely correct	993	99.3%
+Only 1 spatial object is wrong	5	0.5%
+More than 1 spatial objects are wrong	2	0.2%
+The results show that accuracy loss exists in GBRG. However, the accuracy loss is not serious and can be ignored. 99.3% of the input points returns the results which are completely correct. The input points which return the wrong results are in the areas where the density of the spatial objects is low. These areas are always in the suburbs where the demand for reverse geocoding is low. So the accuracy of GBRG can meet the needs of users.
+Conclusion and Future Work: In this paper, we introduce an efficient reverse geocoding method based on GBRG. In GBRG, the multidimensional spatial data is mapped to one dimension with Geohash and the retrieval is simplified. Experiments show that GBRG has a high efficiency while the accuracy loss can be ignored. However, there is still a limitation that GBRG does not apply well to the areas in the high latitudes. In GBRG, the grids of the same level share the same latitude and longitude span. But the size of the grids changes along with latitude. In the high latitudes, the number of kilometers corresponding to the same longitude span is very small and this will seriously affect the accuracy of GBRG. Further research will be done to overcome the shortcoming.
+Acknowledgment
+This work is supported in part through a Chinese HTRDP(863) grant (2015AA123901).
+References
+[1]GeoNames,  “Reverse Geocoding Webservices,” 
+http://www.geonames.org/export/reverse-geocoding.html
+[2]Google, “Google Maps Geocoding API,”
+https://developers.google.com/maps/documentation/geocoding/intro#ReverseGeocoding
+[3]ArcGIS, “ArcGIS REST API: World Geocoding Service,”
+https://developers.arcgis.com/rest/geocode/api-reference/geocoding-reverse-geocode.htm
+[4]Shekhar, Shashi, et al. “Spatial big-data challenges intersecting mobility and cloud computing.” Proceedings of the Eleventh ACM International Workshop on Data Engineering for Wireless and Mobile Access ACM, 2012:1-6.
+[5]Datatang Technology Inc. POI of Beijing, China,
+http://www.datatang.com/data/44484
+[6]Datatang Technology Inc. Road Data of Beijing, China,
+http://www.datatang.com/data/43855
+[7]Baidu, Baidu Maps API,
+ http://developer.baidu.com/map/reference/index.
+[8]National Bureau of Statistics of China, Country Subdivisions of China, 
+http://www.stats.gov.cn/tjsj/tjbz/xzqhdm/
+[9]Boundary Data of Counties in China,
+ https://drive.google.com/file/d/0B_8b-F9NYYBrVW1sM2FETm51Skk/view?usp=sharing
+[10]PostGIS, “PostGIS 2.2.2dev Manual,” http://postgis.net/
